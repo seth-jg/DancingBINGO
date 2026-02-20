@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Game - Random 16 Cards</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            background: linear-gradient(to bottom, #ffcc00, #ff9900);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        #bingoCard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .tile {
+            background: linear-gradient(145deg, #2c3e50, #1a2530);
+            border: 2px solid #ffcc00;
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-break: break-word;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .tile:hover {
+            transform: scale(1.05);
+            background: linear-gradient(145deg, #34495e, #2c3e50);
+        }
+        
+        .tile.selected {
+            background: linear-gradient(145deg, #ff9900, #ff6600);
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.7);
+        }
+        
+        .tile.bingo {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bingo Game</h1>
+        <div class="game-info">
+            <div class="status" id="status">Select 4 in a row to win!</div>
+            <div class="controls">
+                <button id="shuffleBtn">Shuffle Cards</button>
+                <button id="resetBtn">Reset Game</button>
+            </div>
+        </div>
+        
+        <div id="bingoCard"></div>
+    </div>
+
+    <script>
+        // Large pool of items - you can add as many as you want here
+        const allItems = [
+            "Rock and roll stroll",
+            "Jive",
+            "Country Two Step",
+            "Nightclub Slow Dance",
+            "Rumba Blues",
+            "Night Fever Stroll",
+            "East Coast Swing",
+            "Shivers stroll",
+            "West Coast Swing",
+            "Hustle",
+            "Carolina Blues",
+            "Madison",
+            "Blango",
+            "Shake your tail feathers",
+            "UK Blues",
+            "Carolina Shag"
+        ];
+
+        let selectedItems = [];
+        let selectedTiles = [];
+        let hasWon = false;
+
+        function getRandomItems(array, count) {
+            // Create a copy of the array to avoid modifying the original
+            const shuffled = [...array].sort(() => 0.5 - Math.random());
+            // Return the first 'count' items
+            return shuffled.slice(0, count);
+        }
+
+        function createBingoCard() {
+            // Clear the card
+            const cardElement = document.getElementById('bingoCard');
+            cardElement.innerHTML = '';
+            
+            // Get 16 random items from the pool
+            selectedItems = getRandomItems(allItems, 16);
+            
+            // Create tiles
+            selectedItems.forEach((item, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.textContent = item;
+                tile.dataset.index = index;
+                tile.addEventListener('click', () => toggleTile(tile, index));
+                cardElement.appendChild(tile);
+            });
+            
+            // Reset game state
+            selectedTiles = [];
+            hasWon = false;
+            document.getElementById('status').textContent = 'Select 4 in a row to win!';
+        }
+
+        function toggleTile(tile, index) {
+            if (hasWon) return;
+            
+            if (selectedTiles.includes(index)) {
+                // Deselect
+                selectedTiles = selectedTiles.filter(i => i !== index);
+                tile.classList.remove('selected');
+            } else {
+                // Select
+                selectedTiles.push(index);
+                tile.classList.add('selected');
+            }
+            
+            if (selectedTiles.length >= 4) {
+                checkWinCondition();
+            }
+        }
+
+        function checkWinCondition() {
+            // Create a 4x4 grid representation
+            const grid = Array(4).fill().map(() => Array(4).fill(false));
+            
+            // Mark selected tiles on grid
+            selectedTiles.forEach(index => {
+                const row = Math.floor(index / 4);
+                const col = index % 4;
+                grid[row][col] = true;
+            });
+            
+            // Check rows
+            for (let row = 0; row < 4; row++) {
+                if (grid[row].every(cell => cell)) {
+                    winGame();
+                    return;
+                }
+            }
+            
+            // Check columns
+            for (let col = 0; col < 4; col++) {
+                if (grid.every(row => row[col])) {
+                    winGame();
+                    return;
+                }
+            }
+            
+            // Check diagonals
+            if (grid[0][0] && grid[1][1] && grid[2][2] && grid[3][3]) {
+                winGame();
+                return;
+            }
+            
+            if (grid[0][3] && grid[1][2] && grid[2][1] && grid[3][0]) {
+                winGame();
+                return;
+            }
+            
+            // Update status if no bingo yet
+            if (selectedTiles.length >= 4) {
+                document.getElementById('status').textContent = `Selected ${selectedTiles.length} tiles. Keep going!`;
+            }
+        }
+
+        function winGame() {
+            hasWon = true;
+            document.getElementById('status').innerHTML = '<div class="win-message">🎉 BINGO! 🎉</div>';
+            
+            // Add bingo animation to all selected tiles
+            document.querySelectorAll('.tile.selected').forEach(tile => {
+                tile.classList.add('bingo');
+            });
+        }
+
+        // Event listeners
+        document.getElementById('shuffleBtn').addEventListener('click', createBingoCard);
+        document.getElementById('resetBtn').addEventListener('click', createBingoCard);
+
+        // Initialize the game
+        createBingoCard();
+    </script>
+</body>
+</html>
