@@ -6,6 +6,7 @@
 <title>Dancing Bingo</title>
 
 <style>
+
 *{
 box-sizing:border-box;
 margin:0;
@@ -42,20 +43,20 @@ text-shadow:0 0 10px rgba(255,204,0,0.5);
 
 .game-info{
 display:flex;
-justify-content:space-between;
+flex-direction:column;
+align-items:center;
 margin-bottom:20px;
-flex-wrap:wrap;
-gap:10px;
+gap:12px;
+width:100%;
 }
 
 .status{
 background:rgba(0,0,0,0.5);
 padding:10px 15px;
 border-radius:8px;
-flex:1;
-min-width:200px;
 text-align:center;
 font-weight:bold;
+width:100%;
 }
 
 .controls{
@@ -63,6 +64,7 @@ display:flex;
 gap:10px;
 flex-wrap:wrap;
 justify-content:center;
+width:100%;
 }
 
 button{
@@ -108,7 +110,9 @@ align-items:center;
 justify-content:center;
 
 text-align:center;
-word-break:break-word;
+
+word-break:normal;
+overflow-wrap:anywhere;
 
 font-size:clamp(12px,2.5vw,18px);
 
@@ -138,6 +142,19 @@ animation:pulse 1s infinite;
 50%{transform:scale(1.05)}
 100%{transform:scale(1)}
 }
+
+@media (max-width:500px){
+
+.container{
+padding:15px;
+}
+
+#bingoCard{
+gap:8px;
+}
+
+}
+
 </style>
 </head>
 
@@ -210,19 +227,17 @@ return array;
 function createBingoCard(){
 
 const cardElement=document.getElementById("bingoCard");
-
 cardElement.innerHTML="";
 
-let stored=localStorage.getItem("bingoItems");
+let storedBoard=localStorage.getItem("bingoItems");
 
-if(stored){
+if(storedBoard){
 
-selectedItems=JSON.parse(stored);
+selectedItems=JSON.parse(storedBoard);
 
 }else{
 
 selectedItems=shuffle([...allItems]).slice(0,16);
-
 localStorage.setItem("bingoItems",JSON.stringify(selectedItems));
 
 }
@@ -232,9 +247,7 @@ selectedItems.forEach((item,index)=>{
 const tile=document.createElement("div");
 
 tile.className="tile";
-
 tile.textContent=item;
-
 tile.dataset.index=index;
 
 tile.addEventListener("click",()=>toggleTile(tile,index));
@@ -243,7 +256,29 @@ cardElement.appendChild(tile);
 
 });
 
+
+
+let storedSelections=localStorage.getItem("bingoSelections");
+
+if(storedSelections){
+
+selectedTiles=JSON.parse(storedSelections);
+
+selectedTiles.forEach(index=>{
+
+const tile=cardElement.children[index];
+
+if(tile){
+tile.classList.add("selected");
+}
+
+});
+
+}else{
+
 selectedTiles=[];
+
+}
 
 hasWon=false;
 
@@ -260,21 +295,19 @@ if(hasWon)return;
 if(selectedTiles.includes(index)){
 
 selectedTiles=selectedTiles.filter(i=>i!==index);
-
 tile.classList.remove("selected");
 
 }else{
 
 selectedTiles.push(index);
-
 tile.classList.add("selected");
 
 }
 
+localStorage.setItem("bingoSelections",JSON.stringify(selectedTiles));
+
 if(selectedTiles.length>=4){
-
 checkWinCondition();
-
 }
 
 }
@@ -288,7 +321,6 @@ const grid=Array(4).fill().map(()=>Array(4).fill(false));
 selectedTiles.forEach(index=>{
 
 const row=Math.floor(index/4);
-
 const col=index%4;
 
 grid[row][col]=true;
@@ -298,11 +330,8 @@ grid[row][col]=true;
 for(let row=0;row<4;row++){
 
 if(grid[row].every(cell=>cell)){
-
 winGame();
-
 return;
-
 }
 
 }
@@ -310,29 +339,20 @@ return;
 for(let col=0;col<4;col++){
 
 if(grid.every(row=>row[col])){
-
 winGame();
-
 return;
-
 }
 
 }
 
 if(grid[0][0]&&grid[1][1]&&grid[2][2]&&grid[3][3]){
-
 winGame();
-
 return;
-
 }
 
 if(grid[0][3]&&grid[1][2]&&grid[2][1]&&grid[3][0]){
-
 winGame();
-
 return;
-
 }
 
 document.getElementById("status").textContent=`Selected ${selectedTiles.length} tiles. Keep going!`;
@@ -348,9 +368,7 @@ hasWon=true;
 document.getElementById("status").innerHTML="🎉 BINGO! 🎉";
 
 document.querySelectorAll(".tile.selected").forEach(tile=>{
-
 tile.classList.add("bingo");
-
 });
 
 }
@@ -360,6 +378,7 @@ tile.classList.add("bingo");
 document.getElementById("shuffleBtn").addEventListener("click",()=>{
 
 localStorage.removeItem("bingoItems");
+localStorage.removeItem("bingoSelections");
 
 createBingoCard();
 
@@ -370,13 +389,12 @@ createBingoCard();
 document.getElementById("resetBtn").addEventListener("click",()=>{
 
 selectedTiles=[];
-
 hasWon=false;
 
+localStorage.removeItem("bingoSelections");
+
 document.querySelectorAll(".tile").forEach(tile=>{
-
 tile.classList.remove("selected","bingo");
-
 });
 
 document.getElementById("status").textContent="Select 4 in a row to win!";
